@@ -57,7 +57,6 @@ export type CodexResponsesRequest = {
   prompt_cache_key?: string;
   tool_choice: "auto";
   parallel_tool_calls: boolean;
-  temperature?: number;
 };
 
 export type CodexModelEntry = {

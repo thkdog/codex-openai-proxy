@@ -2,6 +2,7 @@
  * 实现逻辑说明：
  * 这里把外部的 OpenAI 标准请求结构转换为 Codex backend-api 的 responses 请求体，
  * 并把 Codex 的事件流改写回标准 OpenAI Responses / Chat Completions 输出格式。
+ * 当前仅白名单透传已确认支持的字段，未支持参数由路由层统一记录 warning 后忽略。
  */
 
 import type {
@@ -73,7 +74,6 @@ export function buildCodexResponsesRequestFromResponses(
     include: ["reasoning.encrypted_content"],
     tool_choice: "auto",
     parallel_tool_calls: true,
-    temperature: request.temperature,
   };
 }
 
@@ -92,7 +92,6 @@ export function buildCodexResponsesRequestFromChatCompletions(
     include: ["reasoning.encrypted_content"],
     tool_choice: "auto",
     parallel_tool_calls: true,
-    temperature: request.temperature,
   };
 }
 

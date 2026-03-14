@@ -1,6 +1,6 @@
 {
   "name": "@thkdog/codex-openai-proxy",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Use local Codex auth.json to expose an OpenAI-compatible proxy server",
   "license": "MIT",
   "type": "module",

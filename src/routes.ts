@@ -32,6 +32,28 @@ function writeSSE(reply: FastifyReply, data: unknown) {
   reply.raw.write(`data: ${JSON.stringify(data)}\n\n`);
 }
 
+function logIgnoredParameters(
+  logger: FastifyInstance["log"] | FastifyReply["log"],
+  body: Record<string, unknown>,
+  allowedKeys: string[],
+) {
+  const ignoredKeys = Object.keys(body).filter((key) => !allowedKeys.includes(key));
+
+  if (ignoredKeys.length > 0) {
+    logger.warn(`忽略未支持的 OpenAI 参数: ${ignoredKeys.join(", ")}`);
+  }
+}
+
+function writeSSEError(reply: FastifyReply, error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  writeSSE(reply, {
+    error: {
+      message,
+      type: "proxy_error",
+    },
+  });
+}
+
 export async function registerRoutes(app: FastifyInstance) {
   app.get("/", async (request) => {
     const host = request.headers.host ?? "127.0.0.1:8787";
@@ -72,20 +94,34 @@ export async function registerRoutes(app: FastifyInstance) {
   });
 
   app.post<{ Body: OpenAIResponsesRequest }>("/v1/responses", async (request, reply) => {
+    logIgnoredParameters(
+      request.log,
+      (request.body ?? {}) as Record<string, unknown>,
+      ["model", "instructions", "input", "stream"],
+    );
+
     const body = buildCodexResponsesRequestFromResponses(request.body ?? {});
 
     if (request.body?.stream) {
+      reply.hijack();
       reply.raw.writeHead(200, {
         "Content-Type": "text/event-stream; charset=utf-8",
         "Cache-Control": "no-cache, no-transform",
         Connection: "keep-alive",
       });
 
-      await streamCodexResponseToSSE(body, reply, (event: CodexEvent) => {
-        writeSSE(reply, event);
-      });
+      try {
+        await streamCodexResponseToSSE(body, reply, (event: CodexEvent) => {
+          writeSSE(reply, event);
+        });
 
-      reply.raw.write("data: [DONE]\n\n");
+        reply.raw.write("data: [DONE]\n\n");
+      } catch (error) {
+        request.log.error(error);
+        writeSSEError(reply, error);
+        reply.raw.write("data: [DONE]\n\n");
+      }
+
       reply.raw.end();
       return reply;
     }
@@ -106,28 +142,42 @@ export async function registerRoutes(app: FastifyInstance) {
   app.post<{ Body: OpenAIChatCompletionsRequest }>(
     "/v1/chat/completions",
     async (request, reply) => {
+      logIgnoredParameters(
+        request.log,
+        (request.body ?? {}) as Record<string, unknown>,
+        ["model", "messages", "stream"],
+      );
+
       const body = buildCodexResponsesRequestFromChatCompletions(request.body ?? {});
       const model = normalizeModelName(request.body?.model);
 
       if (request.body?.stream) {
         const responseId = `chatcmpl_${Date.now()}`;
 
+        reply.hijack();
         reply.raw.writeHead(200, {
           "Content-Type": "text/event-stream; charset=utf-8",
           "Cache-Control": "no-cache, no-transform",
           Connection: "keep-alive",
         });
 
-        await streamCodexResponseToSSE(body, reply, (event: CodexEvent) => {
-          if (event.type === "response.output_text.delta" && event.delta) {
-            writeSSE(reply, createChatCompletionChunk(responseId, model, event.delta));
-          }
-          if (event.type === "response.completed") {
-            writeSSE(reply, createChatCompletionDoneChunk(responseId, model));
-          }
-        });
+        try {
+          await streamCodexResponseToSSE(body, reply, (event: CodexEvent) => {
+            if (event.type === "response.output_text.delta" && event.delta) {
+              writeSSE(reply, createChatCompletionChunk(responseId, model, event.delta));
+            }
+            if (event.type === "response.completed") {
+              writeSSE(reply, createChatCompletionDoneChunk(responseId, model));
+            }
+          });
 
-        reply.raw.write("data: [DONE]\n\n");
+          reply.raw.write("data: [DONE]\n\n");
+        } catch (error) {
+          request.log.error(error);
+          writeSSEError(reply, error);
+          reply.raw.write("data: [DONE]\n\n");
+        }
+
         reply.raw.end();
         return reply;
       }
