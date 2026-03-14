@@ -2,11 +2,11 @@
 
 # codex-openai-proxy
 
-A local OpenAI-compatible proxy that reuses local Codex / ChatGPT auth state and forwards requests to `https://chatgpt.com/backend-api/codex/*`.
+把本机 Codex 登录态代理成 OpenAI 兼容接口。
 
-It exposes OpenAI-style endpoints so existing OpenAI SDK integrations and tools can work with minimal changes.
+本服务会读取本地认证文件，然后把请求转发到 `https://chatgpt.com/backend-api/codex/*`，对外提供 OpenAI 风格接口，方便直接接入官方 OpenAI SDK 或现有 OpenAI 生态工具。
 
-Currently supported:
+当前支持：
 
 - `GET /health`
 - `GET /v1/models`
@@ -15,63 +15,63 @@ Currently supported:
 
 ## Quick Start
 
-### 1. Prerequisites
+### 1. 准备前置条件
 
 - Node.js 18+
-- You are already signed in to Codex / ChatGPT on this machine
-- Default auth file path: `~/.codex/auth.json`
+- 本机已经登录 Codex / ChatGPT，并存在认证文件
+- 默认认证文件路径：`~/.codex/auth.json`
 
-You can verify the auth file exists:
+可以先确认认证文件是否存在：
 
 ```bash
 ls ~/.codex/auth.json
 ```
 
-### 2. Run with npx
+### 2. 通过 npx 启动
 
 ```bash
 npx @thkdog/codex-openai-proxy
 ```
 
-Default listen address:
+默认监听地址：
 
 ```text
 http://127.0.0.1:8787
 ```
 
-If you are developing inside this repository, you can also run:
+如果你是在本仓库里开发，也可以继续本地启动：
 
 ```bash
 npm install
 npm run dev
 ```
 
-On startup, the server prints:
+启动成功后，终端会打印：
 
-- service URL
-- active auth file path
-- health check URL
-- models URL
+- 服务地址
+- 使用中的认证文件路径
+- 健康检查地址
+- 模型列表地址
 - OpenAI SDK `baseURL`
-- copy-paste `curl` commands for verification
+- 可直接复制的 `curl` 验证命令
 
-## CLI Options
+## 启动参数
 
-This project uses command-line arguments only and does not read environment variables.
+本项目现在只支持命令行参数，不再读取环境变量。
 
-Show help:
+查看帮助：
 
 ```bash
 npx @thkdog/codex-openai-proxy --help
 ```
 
-Available options:
+支持参数：
 
-- `-H, --host <host>`: listen host, default `127.0.0.1`
-- `-p, --port <port>`: listen port, default `8787`
-- `-a, --auth-file <path>`: auth file path, default `~/.codex/auth.json`
+- `-H, --host <host>`：监听地址，默认 `127.0.0.1`
+- `-p, --port <port>`：监听端口，默认 `8787`
+- `-a, --auth-file <path>`：认证文件路径，默认 `~/.codex/auth.json`
 
-Examples:
+示例：
 
 ```bash
 npx @thkdog/codex-openai-proxy --port 9000
@@ -89,36 +89,36 @@ npx @thkdog/codex-openai-proxy --auth-file ~/.codex/auth.json
 npx @thkdog/codex-openai-proxy --host 0.0.0.0 --port 9000 --auth-file ~/.codex/auth.json
 ```
 
-You can also install it globally:
+也可以全局安装后使用：
 
 ```bash
 npm install -g @thkdog/codex-openai-proxy
 codex-openai-proxy --port 9000
 ```
 
-## Verify
+## 启动后验证
 
-Health check:
+健康检查：
 
 ```bash
 curl http://127.0.0.1:8787/health
 ```
 
-List models:
+查看模型列表：
 
 ```bash
 curl http://127.0.0.1:8787/v1/models
 ```
 
-Root info page:
+根路径说明页：
 
 ```bash
 curl http://127.0.0.1:8787/
 ```
 
-## curl Examples
+## curl 示例
 
-Non-streaming `chat/completions`:
+非流式 `chat/completions`：
 
 ```bash
 curl http://127.0.0.1:8787/v1/chat/completions \
@@ -131,7 +131,7 @@ curl http://127.0.0.1:8787/v1/chat/completions \
   }'
 ```
 
-Streaming `chat/completions`:
+流式 `chat/completions`：
 
 ```bash
 curl -N http://127.0.0.1:8787/v1/chat/completions \
@@ -145,7 +145,7 @@ curl -N http://127.0.0.1:8787/v1/chat/completions \
   }'
 ```
 
-Non-streaming `responses`:
+非流式 `responses`：
 
 ```bash
 curl http://127.0.0.1:8787/v1/responses \
@@ -164,15 +164,15 @@ curl http://127.0.0.1:8787/v1/responses \
   }'
 ```
 
-## OpenAI SDK Example
+## OpenAI SDK 示例
 
-Install the official SDK first:
+先安装官方 SDK：
 
 ```bash
 npm install openai
 ```
 
-`chat/completions` example:
+`chat/completions` 示例：
 
 ```ts
 import OpenAI from "openai";
@@ -192,7 +192,7 @@ const result = await client.chat.completions.create({
 console.log(result.choices[0]?.message?.content);
 ```
 
-`responses` example:
+`responses` 示例：
 
 ```ts
 import OpenAI from "openai";
@@ -210,26 +210,26 @@ const result = await client.responses.create({
 console.log(result.output_text);
 ```
 
-## Troubleshooting
+## 常见问题
 
-Auth file not found:
+认证文件不存在：
 
-- the default path is not `~/.codex/auth.json`
-- pass `--auth-file` explicitly
-- `--auth-file ~/.codex/auth.json` is supported and `~` will be expanded automatically
+- 默认路径不是 `~/.codex/auth.json`
+- 你可以通过 `--auth-file` 显式指定
+- `--auth-file ~/.codex/auth.json` 这种写法已支持 `~` 自动展开
 
-Invalid auth file:
+认证文件格式不正确：
 
-- the file is not valid JSON
-- or it is missing `tokens.access_token`
-- or it is missing `tokens.account_id`
+- 文件内容不是合法 JSON
+- 或缺少 `tokens.access_token`
+- 或缺少 `tokens.account_id`
 
-Port issues:
+端口不可用：
 
-- `--port` must be an integer between `1` and `65535`
-- or the port is already in use
+- 传入的 `--port` 不是 1 到 65535 的整数
+- 或端口已被其他进程占用
 
-Expired Codex auth state:
+Codex 登录态失效：
 
-- `/health` works but `/v1/models` fails
-- in that case you usually need to sign in to Codex / ChatGPT again so the local auth file is refreshed
+- `/health` 正常但 `/v1/models` 请求失败
+- 这种情况通常需要重新登录 Codex / ChatGPT 以刷新本地认证文件
