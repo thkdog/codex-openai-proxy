@@ -33,7 +33,13 @@ npm install
 
 ### 3. 启动服务
 
-使用默认配置启动：
+直接通过 `npx` 启动：
+
+```bash
+npx @thkdog/codex-openai-proxy
+```
+
+如果你是在本仓库里开发，也可以继续本地启动：
 
 ```bash
 npm run dev
@@ -54,6 +60,39 @@ http://127.0.0.1:8787
 - OpenAI SDK `baseURL`
 - 可直接复制的 `curl` 验证命令
 
+## 通过 npx 使用
+
+默认启动：
+
+```bash
+npx @thkdog/codex-openai-proxy
+```
+
+指定端口：
+
+```bash
+npx @thkdog/codex-openai-proxy --port 9000
+```
+
+指定认证文件：
+
+```bash
+npx @thkdog/codex-openai-proxy --auth-file ~/.codex/auth.json
+```
+
+同时指定全部参数：
+
+```bash
+npx @thkdog/codex-openai-proxy --host 0.0.0.0 --port 9000 --auth-file ~/.codex/auth.json
+```
+
+也可以全局安装后使用：
+
+```bash
+npm install -g @thkdog/codex-openai-proxy
+codex-openai-proxy --port 9000
+```
+
 ## 启动参数
 
 本项目现在只支持命令行参数，不再读取环境变量。
@@ -62,6 +101,7 @@ http://127.0.0.1:8787
 
 ```bash
 npm run dev -- --help
+npx @thkdog/codex-openai-proxy --help
 ```
 
 生产模式：
@@ -86,13 +126,13 @@ npm run dev -- --host 0.0.0.0 --port 9000
 使用自定义认证文件：
 
 ```bash
-npm run dev -- --auth-file /absolute/path/to/auth.json
+npm run dev -- --auth-file ~/.codex/auth.json
 ```
 
 同时指定全部参数：
 
 ```bash
-npm run dev -- --host 0.0.0.0 --port 9000 --auth-file /absolute/path/to/auth.json
+npm run dev -- --host 0.0.0.0 --port 9000 --auth-file ~/.codex/auth.json
 ```
 
 ## 启动后验证
@@ -215,6 +255,7 @@ console.log(result.output_text);
 
 - 默认路径不是 `~/.codex/auth.json`
 - 你可以通过 `--auth-file` 显式指定
+- `--auth-file ~/.codex/auth.json` 这种写法已支持 `~` 自动展开
 
 认证文件格式不正确：
 

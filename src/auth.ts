@@ -30,6 +30,14 @@ export function resolveCodexAuthFilePath(authFilePath?: string) {
     return getDefaultCodexAuthFilePath();
   }
 
+  if (authFilePath === "~") {
+    return os.homedir();
+  }
+
+  if (authFilePath.startsWith("~/")) {
+    return path.join(os.homedir(), authFilePath.slice(2));
+  }
+
   return path.resolve(authFilePath);
 }
 
